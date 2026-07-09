@@ -3,33 +3,29 @@ import pandas as pd
 
 st.set_page_config(page_title="Order Nhà Hàng", layout="wide")
 
-st.title("🍽️ Ứng dụng Order Đồ ăn & Thức uống")
+st.title("🍽️ Hệ thống Order Nhà Hàng")
 
-# Danh sách thực đơn mẫu
+# Thực đơn phong phú hơn
 menu = {
     "Đồ ăn": {
-        "Pizza Hải Sản": 150000,
-        "Mì Ý Bò Bằm": 95000,
-        "Burger Gà": 65000,
-        "Salad Trộn": 50000
+        "Pizza Hải Sản": 150000, "Mì Ý Bò Bằm": 95000, "Burger Gà": 65000,
+        "Salad Trộn": 50000, "Bít tết Bò Mỹ": 250000, "Sườn nướng BBQ": 180000,
+        "Cánh gà chiên mắm": 75000, "Lẩu Thái hải sản": 350000
     },
     "Thức uống": {
-        "Coca Cola": 20000,
-        "Trà Đào": 35000,
-        "Cà Phê Sữa": 25000,
-        "Nước Suối": 10000
+        "Coca Cola": 20000, "Trà Đào Cam Sả": 35000, "Cà Phê Sữa": 25000,
+        "Nước Suối": 10000, "Sinh tố Bơ": 45000, "Nước ép cam": 40000,
+        "Mojito chanh dây": 55000, "Bia Heineken": 30000
     }
 }
 
-# Khởi tạo giỏ hàng (session state)
 if 'order_list' not in st.session_state:
     st.session_state.order_list = []
 
-# Giao diện chọn món
-col1, col2 = st.columns(2)
+col1, col2 = st.columns([1, 1.5])
 
 with col1:
-    st.subheader("Menu")
+    st.subheader("Chọn Món")
     category = st.selectbox("Chọn loại:", list(menu.keys()))
     item = st.selectbox("Chọn món:", list(menu[category].keys()))
     quantity = st.number_input("Số lượng:", min_value=1, value=1)
@@ -44,23 +40,29 @@ with col1:
         })
         st.success(f"Đã thêm {item} vào giỏ!")
 
-# Hiển thị giỏ hàng
 with col2:
-    st.subheader("Giỏ hàng của bạn")
+    st.subheader("Giỏ hàng")
     if st.session_state.order_list:
         df = pd.DataFrame(st.session_state.order_list)
         st.table(df)
         
-        tong_bill = df["Thành tiền"].sum()
-        st.metric(label="Tổng hóa đơn (VNĐ)", value=f"{tong_bill:,.0f}")
+        tam_tinh = df["Thành tiền"].sum()
+        giam_gia = 0
+        
+        # Tính voucher 5% cho hóa đơn > 1.000.000
+        if tam_tinh > 1000000:
+            giam_gia = tam_tinh * 0.05
+            st.info(f"🎉 Chúc mừng! Bạn được giảm 5% vì hóa đơn trên 1.000.000 VNĐ.")
+        
+        tong_thanh_toan = tam_tinh - giam_gia
+        
+        st.write(f"**Tạm tính:** {tam_tinh:,.0f} VNĐ")
+        if giam_gia > 0:
+            st.write(f"**Giảm giá (5%):** -{giam_gia:,.0f} VNĐ")
+        st.metric(label="Tổng thanh toán", value=f"{tong_thanh_toan:,.0f} VNĐ")
         
         if st.button("Xóa giỏ hàng"):
             st.session_state.order_list = []
             st.rerun()
     else:
         st.info("Giỏ hàng đang trống.")
-
-# Xuất hóa đơn
-if st.session_state.order_list:
-    csv = pd.DataFrame(st.session_state.order_list).to_csv(index=False).encode('utf-8')
-    st.download_button("Tải hóa đơn (CSV)", csv, "hoa_don.csv", "text/csv")
